@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Toàn Diện | KT-XH xã Trà Leng 2025</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Thêm plugin cho biểu đồ Treemap (dùng cho ngân sách) -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-treemap@2.3.0/dist/chartjs-chart-treemap.min.js"></script>
+
+    <style>
+        :root {
+            --primary-color: #4a69bd;
+            --secondary-color: #1dd1a1;
+            --danger-color: #ff6b6b;
+            --warning-color: #feca57;
+            --info-color: #54a0ff;
+            --border-radius: 12px;
+            --shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+            --transition: all 0.3s ease;
+        }
+
+        /* Light Mode */
+        body {
+            --bg-color: #f1f2f6;
+            --widget-bg-color: #ffffff;
+            --text-color: #2f3542;
+            --heading-color: #2f3542;
+            --border-color: #dfe4ea;
+            --sidebar-bg: #ffffff;
+            --sidebar-link-color: #576574;
+            --sidebar-link-hover-bg: #f1f2f6;
+            --sidebar-link-active-bg: #e1e6f0;
+        }
+
+        /* Dark Mode */
+        body.dark-mode {
+            --bg-color: #2f3542;
+            --widget-bg-color: #3d4453;
+            --text-color: #f1f2f6;
+            --heading-color: #ffffff;
+            --border-color: #4a5162;
+            --sidebar-bg: #3d4453;
+            --sidebar-link-color: #ced6e0;
+            --sidebar-link-hover-bg: #4a5162;
+            --sidebar-link-active-bg: #2f3542;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+        }
+        
+        /* --- Sidebar --- */
+        .sidebar {
+            width: 260px;
+            background-color: var(--sidebar-bg);
+            box-shadow: var(--shadow);
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            overflow-y: auto;
+            padding: 20px 0;
+            z-index: 100;
+        }
+        .sidebar-header {
+            padding: 0 20px 20px 20px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .sidebar-header h2 { font-size: 1.2rem; color: var(--heading-color); }
+        .sidebar-header p { font-size: 0.8rem; }
+        
+        .sidebar-nav { list-style: none; }
+        .sidebar-nav .nav-category {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--sidebar-link-color);
+            padding: 15px 20px 5px 20px;
+        }
+        .sidebar-nav .nav-item a {
+            display: block;
+            padding: 10px 20px;
+            color: var(--text-color);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: var(--transition);
+        }
+        .sidebar-nav .nav-item a:hover { background-color: var(--sidebar-link-hover-bg); }
+        
+        /* --- Main Content --- */
+        .main-content {
+            margin-left: 260px;
+            width: calc(100% - 260px);
+            padding: 20px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        header h1 { color: var(--heading-color); font-size: 2rem; }
+        
+        .dashboard-section {
+            padding-top: 70px; /* Offset for fixed header */
+            margin-top: -70px; /* Negative margin to align correctly */
+            margin-bottom: 40px;
+        }
+
+        .dashboard-section > h3 {
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+        }
+
+        .widget {
+            background-color: var(--widget-bg-color);
+            padding: 25px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+        }
+        .widget h4 { margin-bottom: 20px; text-align: center; font-size: 1.1rem; font-weight: 500; }
+        
+        /* KPI Card styles */
+        .kpi-grid {
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        }
+        .kpi-card { text-align: center; }
+        .kpi-card .value { font-size: 2.5rem; font-weight: 700; color: var(--primary-color); }
+        .kpi-card .label { font-size: 1rem; font-weight: 400; }
+
+        /* Table styles */
+        .widget-table { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        th { background-color: var(--sidebar-link-hover-bg); font-weight: 600; }
+        tbody tr:last-child td { border-bottom: none; }
+
+        /* Theme Switcher */
+        .theme-switcher { display: flex; align-items: center; background-color: var(--widget-bg-color); border-radius: 20px; padding: 5px; cursor: pointer; border: 1px solid var(--border-color); position: relative; }
+        .theme-switcher-icon { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; z-index: 1; }
+        #theme-toggle { display: none; }
+        #theme-toggle:checked + .theme-switcher .slider { transform: translateX(30px); }
+        .slider { width: 30px; height: 30px; border-radius: 50%; background-color: var(--primary-color); position: absolute; transition: var(--transition); }
+        
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .sidebar { transform: translateX(-100%); position: fixed; }
+            .main-content { margin-left: 0; width: 100%; }
+            /* Add a class to show sidebar on mobile with a button */
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR NAVIGATION -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h2>Trà Leng 2025</h2>
+            <p>Số liệu Kinh tế - Xã hội</p>
+        </div>
+        <ul class="sidebar-nav">
+            <li class="nav-category">Dân số & Lao động</li>
+            <li class="nav-item"><a href="#section-01">01. Quy mô hộ</a></li>
+            <li class="nav-item"><a href="#section-02">02. Hộ theo dân tộc</a></li>
+            <li class="nav-item"><a href="#section-03">03. Nhân khẩu theo dân tộc</a></li>
+            <li class="nav-item"><a href="#section-04">04. Dân số theo giới tính</a></li>
+            <li class="nav-item"><a href="#section-05">05. Tháp dân số</a></li>
+            <li class="nav-item"><a href="#section-07">07. Biến động dân số</a></li>
+            <li class="nav-item"><a href="#section-08-11">08-11. Tăng trưởng tự nhiên & cơ học</a></li>
+            <li class="nav-item"><a href="#section-12-13">12-13. Hôn nhân & Ly hôn</a></li>
+            <li class="nav-item"><a href="#section-25">25. Cơ sở kinh doanh cá thể</a></li>
+            <li class="nav-item"><a href="#section-28">28. Sinh viên đang theo học</a></li>
+
+            <li class="nav-category">An sinh & Xã hội</li>
+            <li class="nav-item"><a href="#section-14">14. Trẻ em được tiêm chủng</a></li>
+            <li class="nav-item"><a href="#section-15">15. Trẻ em suy dinh dưỡng</a></li>
+            <li class="nav-item"><a href="#section-16">16. Hộ nghèo, cận nghèo</a></li>
+            <li class="nav-item"><a href="#section-17">17. Nước sạch & Vệ sinh</a></li>
+            <li class="nav-item"><a href="#section-18">18. Sử dụng điện</a></li>
+            <li class="nav-item"><a href="#section-19">19. Sử dụng thiết bị</a></li>
+            
+            <li class="nav-category">Tài chính</li>
+            <li class="nav-item"><a href="#section-20">20. Thu ngân sách</a></li>
+            <li class="nav-item"><a href="#section-21">21. Chi ngân sách</a></li>
+
+            <li class="nav-category">Nông nghiệp</li>
+            <li class="nav-item"><a href="#section-22">22. Sản xuất lúa</a></li>
+            <li class="nav-item"><a href="#section-23">23. Sản xuất ngô, sắn</a></li>
+            <li class="nav-item"><a href="#section-24">24. Chăn nuôi</a></li>
+            
+            <li class="nav-category">Hạ tầng - Giáo dục - Y tế</li>
+            <li class="nav-item"><a href="#section-26">26. Công trình thủy lợi</a></li>
+            <li class="nav-item"><a href="#section-27">27. Công trình cầu treo</a></li>
+            <li class="nav-item"><a href="#section-29">29. Giáo dục phổ thông</a></li>
+            <li class="nav-item"><a href="#section-30">30. Nhân lực y tế</a></li>
+        </ul>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+        <header>
+            <h1>Dashboard KT-XH xã Trà Leng</h1>
+             <label class="theme-switcher" for="theme-toggle">
+                <span class="theme-switcher-icon">☀️</span>
+                <span class="theme-switcher-icon">🌙</span>
+                <div class="slider"></div>
+            </label>
+            <input type="checkbox" id="theme-toggle">
+        </header>
+
+        <!-- NỘI DUNG CÁC MỤC Ở ĐÂY -->
+        <section id="section-01" class="dashboard-section">
+            <h3>01. Tổng số hộ và quy mô hộ</h3>
+            <div class="grid-container">
+                <div class="widget kpi-card">
+                    <div class="value" id="kpi-total-households">580</div>
+                    <div class="label">Tổng số hộ</div>
+                </div>
+                <div class="widget" style="grid-column: 1 / -1;">
+                    <h4>Phân bố quy mô hộ</h4>
+                    <canvas id="quyMoHoChart"></canvas>
+                </div>
+            </div>
+        </section>
+        
+        <section id="section-02" class="dashboard-section">
+             <h3>02 & 03. Cơ cấu dân tộc</h3>
+             <div class="grid-container">
+                 <div class="widget">
+                     <h4>02. Phân bố hộ theo dân tộc</h4>
+                     <canvas id="hoDanTocChart"></canvas>
+                 </div>
+                 <div class="widget">
+                     <h4>03. Phân bố nhân khẩu theo dân tộc</h4>
+                     <canvas id="nhanKhauDanTocChart"></canvas>
+                 </div>
+             </div>
+        </section>
+        
+        <section id="section-04" class="dashboard-section">
+             <h3>04 & 05. Cơ cấu dân số theo Giới tính và Độ tuổi</h3>
+             <div class="grid-container">
+                <div class="widget">
+                    <h4>04. Dân số theo giới tính (chia theo thôn)</h4>
+                    <canvas id="danSoGioiTinhThonChart"></canvas>
+                </div>
+                <div class="widget" style="grid-column: 1 / -1;">
+                    <h4>05. Tháp dân số toàn xã</h4>
+                    <canvas id="thapDanSoChart"></canvas>
+                </div>
+             </div>
+        </section>
+
+        <section id="section-07" class="dashboard-section">
+            <h3>07. Dân số thời điểm</h3>
+            <div class="grid-container kpi-grid">
+                <div class="widget kpi-card">
+                    <div class="value" id="kpi-pop-start">2500</div><div class="label">Dân số đầu năm</div>
+                </div>
+                <div class="widget kpi-card">
+                    <div class="value" id="kpi-pop-end">2650</div><div class="label">Dân số cuối năm</div>
+                </div>
+                 <div class="widget kpi-card">
+                    <div class="value" id="kpi-pop-avg">2575</div><div class="label">Dân số trung bình</div>
+                </div>
+            </div>
+        </section>
+        
+        <section id="section-08-11" class="dashboard-section">
+            <h3>08-11. Biến động dân số trong năm</h3>
+             <div class="grid-container kpi-grid">
+                 <div class="widget kpi-card"><div class="value">50</div><div class="label">Số trẻ em sinh</div></div>
+                 <div class="widget kpi-card"><div class="value">15</div><div class="label">Số người chết</div></div>
+                 <div class="widget kpi-card"><div class="value">120</div><div class="label">Số người chuyển đến</div></div>
+                 <div class="widget kpi-card"><div class="value">5</div><div class="label">Số người chuyển đi</div></div>
+            </div>
+            <div class="grid-container" style="margin-top: 25px;">
+                 <div class="widget">
+                    <h4>Biểu đồ biến động dân số</h4>
+                    <canvas id="bienDongDanSoChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section id="section-12-13" class="dashboard-section">
+            <h3>12 & 13. Hôn nhân và Ly hôn</h3>
+            <div class="grid-container kpi-grid">
+                <div class="widget kpi-card"><div class="value">25</div><div class="label">Số cuộc kết hôn</div></div>
+                <div class="widget kpi-card"><div class="value">1</div><div class="label">Số vụ ly hôn</div></div>
+            </div>
+        </section>
+        
+        <section id="section-14" class="dashboard-section">
+             <h3>14 & 15. Sức khỏe trẻ em</h3>
+             <div class="grid-container">
+                 <div class="widget">
+                     <h4>14. Trẻ em dưới 1 tuổi được tiêm chủng</h4>
+                     <canvas id="tiemChungChart"></canvas>
+                 </div>
+                 <div class="widget">
+                     <h4>15. Trẻ em dưới 5 tuổi suy dinh dưỡng</h4>
+                     <canvas id="suyDinhDuongChart"></canvas>
+                 </div>
+             </div>
+        </section>
+
+        <section id="section-16" class="dashboard-section">
+             <h3>16. Tình hình hộ nghèo, cận nghèo</h3>
+             <div class="grid-container">
+                 <div class="widget" style="grid-column: 1 / -1;">
+                    <h4>Phân loại hộ theo thôn</h4>
+                    <canvas id="hoNgheoChart"></canvas>
+                 </div>
+             </div>
+        </section>
+        
+        <section id="section-17" class="dashboard-section">
+            <h3>17. Tỷ lệ hộ dùng nước sạch & có hố xí hợp vệ sinh</h3>
+            <div class="grid-container">
+                <div class="widget" style="grid-column: 1 / -1;">
+                    <h4>So sánh theo thôn</h4>
+                    <canvas id="nuocSachVeSinhChart"></canvas>
+                </div>
+            </div>
+        </section>
+        
+        <section id="section-18" class="dashboard-section">
+            <h3>18. Tình hình sử dụng điện</h3>
+            <div class="grid-container">
+                <div class="widget">
+                    <h4>Phân loại nguồn điện theo thôn</h4>
+                    <canvas id="suDungDienChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section id="section-19" class="dashboard-section">
+            <h3>19. Tình hình sử dụng các thiết bị sinh hoạt</h3>
+            <div class="grid-container">
+                <div class="widget" style="grid-column: 1 / -1;">
+                    <h4>Số hộ sở hữu Tivi, Xe máy, Điện thoại thông minh</h4>
+                    <canvas id="thietBiSinhHoatChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section id="section-20" class="dashboard-section">
+            <h3>20. Thu ngân sách nhà nước trên địa bàn</h3>
+             <div class="grid-container">
+                 <div class="widget">
+                     <h4>Cơ cấu các khoản thu</h4>
+                     <canvas id="thuNganSachChart"></canvas>
+                 </div>
+                 <div class="widget widget-table">
+                    <h4>Chi tiết các khoản thu (ĐVT: 1000đ)</h4>
+                    <table>
+                        <thead><tr><th>Nội dung</th><th>Tổng số</th></tr></thead>
+                        <tbody>
+                            <tr><td>I. Các khoản thu 100%</td><td>150,000</td></tr>
+                            <tr><td>II. Các khoản thu phân chia</td><td>350,000</td></tr>
+                            <tr><td>III. Thu bổ sung từ cấp trên</td><td>2,500,000</td></tr>
+                            <tr><td>IV. Viện trợ không hoàn lại</td><td>50,000</td></tr>
+                            <tr><td>V. Thu chuyển nguồn</td><td>20,000</td></tr>
+                            <tr><td><strong>TỔNG CỘNG</strong></td><td><strong>3,070,000</strong></td></tr>
+                        </tbody>
+                    </table>
+                 </div>
+            </div>
+        </section>
+        
+        <section id="section-21" class="dashboard-section">
+            <h3>21. Chi ngân sách nhà nước trên địa bàn</h3>
+            <div class="grid-container">
+                <div class="widget">
+                     <h4>Cơ cấu các khoản chi</h4>
+                     <canvas id="chiNganSachChart"></canvas>
+                 </div>
+                 <div class="widget widget-table">
+                    <h4>Chi tiết các khoản chi (ĐVT: 1000đ)</h4>
+                    <table>
+                        <thead><tr><th>Nội dung</th><th>Tổng số</th></tr></thead>
+                        <tbody>
+                            <tr><td>I. Chi đầu tư phát triển</td><td>1,000,000</td></tr>
+                            <tr><td>II. Chi thường xuyên</td><td>1,800,000</td></tr>
+                            <tr><td>III. Dự phòng</td><td>200,000</td></tr>
+                            <tr><td>IV. Chi chuyển nguồn</td><td>70,000</td></tr>
+                            <tr><td><strong>TỔNG CỘNG</strong></td><td><strong>3,070,000</strong></td></tr>
+                        </tbody>
+                    </table>
+                 </div>
+            </div>
+        </section>
+        
+        <!-- Các section khác sẽ được thêm vào đây -->
+        
+        <section id="section-22" class="dashboard-section">
+            <h3>22. Diện tích, năng suất, sản lượng lúa</h3>
+            <div class="grid-container">
+                <div class="widget">
+                    <h4>Sản lượng lúa theo vụ (Tấn)</h4>
+                    <canvas id="sanLuongLuaChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section id="section-23" class="dashboard-section">
+            <h3>23. Diện tích, năng suất, sản lượng ngô, sắn</h3>
+            <div class="grid-container">
+                <div class="widget">
+                    <h4>Sản lượng ngô và sắn (Tấn)</h4>
+                    <canvas id="sanLuongNgoSanChart"></canvas>
+                </div>
+            </div>
+        </section>
+        
+        <section id="section-24" class="dashboard-section">
+            <h3>24. Tổng đàn gia súc, gia cầm</h3>
+            <div class="grid-container">
+                <div class="widget">
+                    <h4>Cơ cấu đàn vật nuôi</h4>
+                    <canvas id="danGiaSucChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section id="section-25" class="dashboard-section">
+            <h3>25. Tổng số cơ sở kinh doanh cá thể phi nông nghiệp</h3>
+            <div class="grid-container">
+                <div class="widget">
+                    <h4>Số lượng cơ sở và lao động theo thôn</h4>
+                    <canvas id="coSoKinhDoanhChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section id="section-26" class="dashboard-section">
+            <h3>26 & 27. Hiện trạng công trình hạ tầng</h3>
+            <div class="grid-container">
+                <div class="widget">
+                    <h4>26. Công trình thủy lợi</h4>
+                    <canvas id="thuyLoiChart"></canvas>
+                </div>
+                <div class="widget">
+                    <h4>27. Công trình cầu treo</h4>
+                    <canvas id="cauTreoChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section id="section-28" class="dashboard-section">
+            <h3>28. Số sinh viên đang theo học</h3>
+            <div class="grid-container">
+                <div class="widget">
+                    <h4>Phân theo trình độ và thôn</h4>
+                    <canvas id="sinhVienChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section id="section-29" class="dashboard-section">
+            <h3>29. Giáo dục phổ thông (Cuối năm học 2024-2025)</h3>
+            <div class="grid-container">
+                <div class="widget widget-table">
+                    <table>
+                        <thead><tr><th>CHỈ TIÊU</th><th>ĐVT</th><th>TỔNG SỐ</th></tr></thead>
+                        <tbody>
+                            <tr><td>Trường học (Mẫu giáo/Tiểu học/THCS)</td><td>Trường</td><td>1 / 1 / 1</td></tr>
+                            <tr><td>Lớp học (Mẫu giáo/Tiểu học/THCS)</td><td>Lớp</td><td>5 / 10 / 8</td></tr>
+                            <tr><td>Phòng học (Mẫu giáo/Tiểu học/THCS)</td><td>Phòng</td><td>5 / 10 / 8</td></tr>
+                            <tr><td>Giáo viên (Mẫu giáo/Tiểu học/THCS)</td><td>Người</td><td>10 / 15 / 12</td></tr>
+                            <tr><td>Học sinh (Mẫu giáo/Tiểu học/THCS)</td><td>Người</td><td>100 / 250 / 200</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+        
+        <section id="section-30" class="dashboard-section">
+            <h3>30. Nhân lực trạm y tế xã năm 2025</h3>
+             <div class="grid-container">
+                <div class="widget widget-table">
+                     <table>
+                        <thead><tr><th>Chỉ tiêu</th><th>Tổng số</th><th>Nữ</th></tr></thead>
+                        <tbody>
+                            <tr><td>Bác sỹ</td><td>1</td><td>0</td></tr>
+                            <tr><td>Y sỹ</td><td>3</td><td>2</td></tr>
+                            <tr><td>Y tá</td><td>2</td><td>2</td></tr>
+                            <tr><td>Hộ sinh</td><td>1</td><td>1</td></tr>
+                            <tr><td>Điều dưỡng</td><td>1</td><td>1</td></tr>
+                            <tr><td><strong>Tổng cộng</strong></td><td><strong>8</strong></td><td><strong>6</strong></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+    // --- BẠN CHỈ CẦN THAY DỮ LIỆU MẪU BÊN DƯỚI BẰNG DỮ LIỆU THỰC TẾ ---
+    const labelsThon = ['Thôn 1', 'Thôn 2', 'Thôn 3', 'Thôn 4', 'Thôn 5', 'Thôn 6', 'Thôn 7'];
+
+    // --- CẤU HÌNH GIAO DIỆN SÁNG/TỐI ---
+    const themeToggle = document.getElementById('theme-toggle');
+    const body = document.body;
+    Chart.defaults.font.family = "'Poppins', sans-serif";
+
+    function getChartColors() {
+        return body.classList.contains('dark-mode') 
+            ? { grid: 'rgba(255, 255, 255, 0.1)', ticks: '#ccc', legend: '#eee' }
+            : { grid: 'rgba(0, 0, 0, 0.1)', ticks: '#666', legend: '#333' };
+    }
+
+    function updateAllChartsTheme() {
+        const colors = getChartColors();
+        Chart.instances.forEach(chart => {
+            if (chart.options.scales) {
+                Object.values(chart.options.scales).forEach(axis => {
+                    if (axis.grid) axis.grid.color = colors.grid;
+                    if (axis.ticks) axis.ticks.color = colors.ticks;
+                });
+            }
+            if (chart.options.plugins && chart.options.plugins.legend) {
+                chart.options.plugins.legend.labels.color = colors.legend;
+            }
+            if (chart.options.plugins && chart.options.plugins.title) {
+                chart.options.plugins.title.color = colors.legend;
+            }
+             // For PolarArea chart radial axis
+            if (chart.config.type === 'polarArea' && chart.options.scales && chart.options.scales.r) {
+                chart.options.scales.r.grid.color = colors.grid;
+                chart.options.scales.r.ticks.color = colors.ticks;
+                chart.options.scales.r.ticks.backdropColor = 'transparent';
+                chart.options.scales.r.angleLines.color = colors.grid;
+                chart.options.scales.r.pointLabels.color = colors.ticks;
+            }
+            chart.update();
+        });
+    }
+    
+    themeToggle.addEventListener('change', () => {
+        body.classList.toggle('dark-mode');
+        // Cần phải hủy và vẽ lại biểu đồ treemap vì nó không tự cập nhật màu tốt
+        chiNganSachChart.destroy();
+        thuNganSachChart.destroy();
+        renderThuNganSachChart();
+        renderChiNganSachChart();
+        updateAllChartsTheme();
+    });
+
+    // --- KHỞI TẠO BIỂU ĐỒ ---
+    
+    // 01. Quy mô hộ
+    new Chart('quyMoHoChart', {
+        type: 'bar',
+        data: {
+            labels: ['1 người', '2 người', '3 người', '4 người', '5 người', '>5 người'],
+            datasets: [{
+                label: 'Số hộ', data: [30, 80, 120, 150, 100, 50],
+                backgroundColor: '#54a0ff', borderRadius: 5
+            }]
+        },
+        options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { color: getChartColors().ticks } }, y: { beginAtZero: true, ticks: { color: getChartColors().ticks } } } }
+    });
+
+    // 02 & 03. Dân tộc
+    new Chart('hoDanTocChart', {
+        type: 'doughnut', data: { labels: ['Ca dong', 'Xê đăng', 'Mnông', 'Cor', 'Kinh', 'Khác'], datasets: [{ data: [250, 150, 50, 30, 100, 20], backgroundColor: ['#4a69bd', '#1dd1a1', '#feca57', '#ff6b6b', '#54a0ff', '#576574'] }] },
+        options: { plugins: { legend: { labels: { color: getChartColors().ticks } } } }
+    });
+    new Chart('nhanKhauDanTocChart', {
+        type: 'pie', data: { labels: ['Ca dong', 'Xê đăng', 'Mnông', 'Cor', 'Kinh', 'Khác'], datasets: [{ data: [1200, 700, 200, 100, 400, 50], backgroundColor: ['#4a69bd', '#1dd1a1', '#feca57', '#ff6b6b', '#54a0ff', '#576574'] }] },
+        options: { plugins: { legend: { labels: { color: getChartColors().ticks } } } }
+    });
+    
+    // 04. Dân số giới tính theo thôn
+    new Chart('danSoGioiTinhThonChart', {
+        type: 'bar', data: { labels: labelsThon, datasets: [ { label: 'Nam', data: [150, 160, 140, 170, 155, 165, 145], backgroundColor: '#54a0ff' }, { label: 'Nữ', data: [140, 150, 130, 160, 145, 155, 135], backgroundColor: '#ff6b6b' } ] },
+        options: { scales: { x: { stacked: true, ticks: { color: getChartColors().ticks } }, y: { stacked: true, beginAtZero: true, ticks: { color: getChartColors().ticks } } }, plugins: { legend: { labels: { color: getChartColors().ticks } } } }
+    });
+    
+    // 05. Tháp dân số
+    new Chart('thapDanSoChart', {
+        type: 'bar', data: { labels: ['0-4', '5-9', '10-14', '15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49', '50-54', '55-59', '60-64', '65+'], datasets: [ { label: 'Nam', data: [-200, -190, -180, -170, -160, -150, -140, -130, -120, -110, -100, -90, -80, -100], backgroundColor: '#54a0ff', borderRadius: 5 }, { label: 'Nữ', data: [190, 180, 170, 160, 150, 140, 130, 120, 110, 100, 90, 80, 70, 120], backgroundColor: '#ff6b6b', borderRadius: 5 } ] },
+        options: { indexAxis: 'y', scales: { x: { stacked: true, ticks: { color: getChartColors().ticks, callback: value => Math.abs(value) } }, y: { stacked: true, ticks: { color: getChartColors().ticks } } }, plugins: { legend: { labels: { color: getChartColors().ticks } }, tooltip: { callbacks: { label: c => `${c.dataset.label}: ${Math.abs(c.raw)}` } } } }
+    });
+
+    // 08-11. Biến động dân số
+    new Chart('bienDongDanSoChart', {
+        type: 'bar', data: { labels: ['Sinh', 'Chết', 'Chuyển đến', 'Chuyển đi'], datasets: [{ data: [50, -15, 120, -5], backgroundColor: ['#1dd1a1', '#ff6b6b', '#54a0ff', '#feca57'] }] },
+        options: { plugins: { legend: { display: false } }, scales: { y: { ticks: { color: getChartColors().ticks } }, x: { ticks: { color: getChartColors().ticks } } } }
+    });
+
+    // 14 & 15. Sức khỏe trẻ em
+    new Chart('tiemChungChart', {
+        type: 'bar', data: { labels: labelsThon, datasets: [{ label: 'Số trẻ', data: [8, 10, 7, 12, 9, 11, 8], backgroundColor: '#1dd1a1' }] },
+        options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { color: getChartColors().ticks } }, x: { ticks: { color: getChartColors().ticks } } } }
+    });
+    new Chart('suyDinhDuongChart', {
+        type: 'bar', data: { labels: labelsThon, datasets: [{ label: 'Số trẻ', data: [2, 3, 1, 4, 2, 3, 2], backgroundColor: '#feca57' }] },
+        options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { color: getChartColors().ticks } }, x: { ticks: { color: getChartColors().ticks } } } }
+    });
+
+    // 16. Hộ nghèo
+    new Chart('hoNgheoChart', {
+        type: 'bar', data: { labels: labelsThon, datasets: [ { label: 'Hộ nghèo', data: [20, 25, 15, 30, 22, 18, 28], backgroundColor: '#ff6b6b' }, { label: 'Hộ cận nghèo', data: [30, 35, 25, 40, 32, 28, 38], backgroundColor: '#feca57' }, { label: 'Không nghèo', data: [100, 90, 110, 80, 98, 102, 84], backgroundColor: '#1dd1a1' } ] },
+        options: { scales: { x: { stacked: true, ticks: { color: getChartColors().ticks } }, y: { stacked: true, beginAtZero: true, ticks: { color: getChartColors().ticks } } }, plugins: { legend: { labels: { color: getChartColors().ticks } } } }
+    });
+
+    // 17. Nước sạch
+    new Chart('nuocSachVeSinhChart', {
+        type: 'bar', data: { labels: labelsThon, datasets: [ { label: 'Hộ dùng nước sạch', data: [120, 110, 130, 90, 115, 112, 100], backgroundColor: '#54a0ff' }, { label: 'Hộ có hố xí HVS', data: [100, 95, 120, 70, 100, 98, 85], backgroundColor: '#4a69bd' } ] },
+        options: { scales: { x: { ticks: { color: getChartColors().ticks } }, y: { beginAtZero: true, ticks: { color: getChartColors().ticks } } }, plugins: { legend: { labels: { color: getChartColors().ticks } } } }
+    });
+
+    // 18. Sử dụng điện
+    new Chart('suDungDienChart', {
+        type: 'bar', data: { labels: labelsThon, datasets: [ { label: 'Điện lưới', data: [140, 145, 150, 120, 150, 148, 142], backgroundColor: '#feca57' }, { label: 'Điện nước', data: [10, 5, 0, 0, 2, 0, 1], backgroundColor: '#576574' } ] },
+        options: { scales: { x: { stacked: true, ticks: { color: getChartColors().ticks } }, y: { stacked: true, beginAtZero: true, ticks: { color: getChartColors().ticks } } }, plugins: { legend: { labels: { color: getChartColors().ticks } } } }
+    });
+
+    // 19. Thiết bị
+    new Chart('thietBiSinhHoatChart', {
+        type: 'line', data: { labels: labelsThon, datasets: [ { label: 'Tivi', data: [130, 120, 140, 100, 135, 130, 120], borderColor: '#1dd1a1', tension: 0.3 }, { label: 'Xe máy', data: [145, 140, 150, 115, 148, 145, 138], borderColor: '#54a0ff', tension: 0.3 }, { label: 'ĐT thông minh', data: [150, 148, 150, 120, 152, 148, 143], borderColor: '#ff6b6b', tension: 0.3 } ] },
+        options: { scales: { x: { ticks: { color: getChartColors().ticks } }, y: { beginAtZero: true, ticks: { color: getChartColors().ticks } } }, plugins: { legend: { labels: { color: getChartColors().ticks } } } }
+    });
+
+    // 20 & 21. Ngân sách
+    let thuNganSachChart, chiNganSachChart;
+    const dataThu = { tree: [150, 350, 2500, 50, 20], labels: ["Thu 100%", "Thu phân chia", "Bổ sung", "Viện trợ", "Chuyển nguồn"] };
+    const dataChi = { tree: [1000, 1800, 200, 70], labels: ["Đầu tư PT", "Thường xuyên", "Dự phòng", "Chuyển nguồn"] };
+    
+    function renderThuNganSachChart() {
+        thuNganSachChart = new Chart('thuNganSachChart', {
+            type: 'treemap', data: { datasets: [{ tree: dataThu.tree, labels: { display: true, color: 'white', font: { size: '14px' } }, data: dataThu.tree, backgroundColor: (c) => ['#4a69bd', '#1dd1a1', '#54a0ff', '#576574', '#8395a7'][c.dataIndex] }] },
+            options: { plugins: { legend: { display: false }, tooltip: { callbacks: { title: (c) => dataThu.labels[c[0].dataIndex], label: (c) => `Giá trị: ${c.formattedValue}` } } } }
+        });
+    }
+    function renderChiNganSachChart() {
+        chiNganSachChart = new Chart('chiNganSachChart', {
+            type: 'treemap', data: { datasets: [{ tree: dataChi.tree, labels: { display: true, color: 'white' }, data: dataChi.tree, backgroundColor: (c) => ['#ff6b6b', '#feca57', '#ee5253', '#ff9f43'][c.dataIndex] }] },
+            options: { plugins: { legend: { display: false }, tooltip: { callbacks: { title: (c) => dataChi.labels[c[0].dataIndex], label: (c) => `Giá trị: ${c.formattedValue}` } } } }
+        });
+    }
+
+    // Nông nghiệp
+    new Chart('sanLuongLuaChart', {
+        type: 'bar', data: { labels: labelsThon, datasets: [{ label: 'Vụ Đông xuân', data: [50, 55, 48, 60, 52, 58, 45], backgroundColor: '#1dd1a1' }, { label: 'Vụ Hè thu', data: [45, 50, 42, 55, 48, 52, 40], backgroundColor: '#aee6e0' }] },
+        options: { scales: { x: { ticks: { color: getChartColors().ticks } }, y: { beginAtZero: true, ticks: { color: getChartColors().ticks } } }, plugins: { legend: { labels: { color: getChartColors().ticks } } } }
+    });
+    new Chart('sanLuongNgoSanChart', {
+        type: 'bar', data: { labels: labelsThon, datasets: [{ label: 'Ngô', data: [20, 22, 18, 25, 21, 23, 17], backgroundColor: '#feca57' }, { label: 'Sắn', data: [100, 110, 95, 120, 105, 115, 90], backgroundColor: '#ffe0a0' }] },
+        options: { scales: { x: { ticks: { color: getChartColors().ticks } }, y: { beginAtZero: true, ticks: { color: getChartColors().ticks } } }, plugins: { legend: { labels: { color: getChartColors().ticks } } } }
+    });
+    new Chart('danGiaSucChart', {
+        type: 'polarArea', data: { labels: ['Trâu', 'Bò', 'Lợn', 'Dê', 'Gà', 'Vịt'], datasets: [{ data: [150, 200, 500, 300, 2000, 1500], backgroundColor: ['#4a69bd', '#1dd1a1', '#feca57', '#ff6b6b', '#54a0ff', '#576574'] }] },
+        options: { scales: { r: { ticks: { color: getChartColors().ticks } } }, plugins: { legend: { labels: { color: getChartColors().ticks } } } }
+    });
+
+    // Hạ tầng, giáo dục...
+    new Chart('coSoKinhDoanhChart', {
+        type: 'bar', data: { labels: labelsThon, datasets: [ { label: 'Số cơ sở', data: [5, 7, 4, 8, 6, 9, 5], backgroundColor: '#4a69bd' }, { label: 'Số lao động', data: [12, 15, 10, 18, 14, 20, 11], backgroundColor: '#82a0e0' } ] },
+        options: { scales: { x: { ticks: { color: getChartColors().ticks } }, y: { beginAtZero: true, ticks: { color: getChartColors().ticks } } }, plugins: { legend: { labels: { color: getChartColors().ticks } } } }
+    });
+    new Chart('thuyLoiChart', {
+        type: 'bar', data: { labels: labelsThon, datasets: [ { label: 'Đang sử dụng', data: [10, 12, 9, 14, 11, 13, 10], backgroundColor: '#1dd1a1' }, { label: 'Hư hỏng', data: [2, 1, 3, 1, 2, 1, 2], backgroundColor: '#ff6b6b' } ] },
+        options: { scales: { x: { stacked: true, ticks: { color: getChartColors().ticks } }, y: { stacked: true, beginAtZero: true, ticks: { color: getChartColors().ticks } } }, plugins: { legend: { labels: { color: getChartColors().ticks } } } }
+    });
+    new Chart('cauTreoChart', {
+        type: 'bar', data: { labels: labelsThon, datasets: [ { label: 'Đang sử dụng', data: [3, 4, 2, 5, 3, 4, 3], backgroundColor: '#54a0ff' }, { label: 'Hư hỏng', data: [0, 1, 0, 1, 0, 0, 1], backgroundColor: '#feca57' } ] },
+        options: { scales: { x: { stacked: true, ticks: { color: getChartColors().ticks } }, y: { stacked: true, beginAtZero: true, ticks: { color: getChartColors().ticks } } }, plugins: { legend: { labels: { color: getChartColors().ticks } } } }
+    });
+    new Chart('sinhVienChart', {
+        type: 'bar', data: { labels: labelsThon, datasets: [ { label: 'Đại học', data: [5, 6, 4, 7, 5, 6, 4], backgroundColor: '#4a69bd' }, { label: 'Cao đẳng', data: [8, 10, 7, 12, 9, 11, 8], backgroundColor: '#82a0e0' }, { label: 'Trung cấp', data: [10, 12, 9, 15, 11, 13, 10], backgroundColor: '#c5d3f0' } ] },
+        options: { scales: { x: { stacked: true, ticks: { color: getChartColors().ticks } }, y: { stacked: true, beginAtZero: true, ticks: { color: getChartColors().ticks } } }, plugins: { legend: { labels: { color: getChartColors().ticks } } } }
+    });
+
+    // --- KHỞI TẠO BAN ĐẦU ---
+    document.addEventListener('DOMContentLoaded', () => {
+        renderThuNganSachChart();
+        renderChiNganSachChart();
+        updateAllChartsTheme();
+    });
+
+    </script>
+</body>
+</html>
